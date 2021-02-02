@@ -1,5 +1,7 @@
 package page.chungjungsoo.to_dosample
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Build
@@ -11,14 +13,16 @@ import android.text.TextWatcher
 import android.view.View
 import android.view.WindowInsetsController
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import page.chungjungsoo.to_dosample.todo.Todo
 import page.chungjungsoo.to_dosample.todo.TodoDatabaseHelper
 import page.chungjungsoo.to_dosample.todo.TodoListViewAdapter
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
     var dbHandler : TodoDatabaseHelper? = null
@@ -56,7 +60,45 @@ class MainActivity : AppCompatActivity() {
 
             // Get elements from custom dialog layout (add_todo_dialog.xml)
             val titleToAdd = dialogView.findViewById<EditText>(R.id.todoTitle)
-            val desciptionToAdd = dialogView.findViewById<EditText>(R.id.todoDescription)
+            val descriptionToAdd = dialogView.findViewById<EditText>(R.id.todoDescription)
+
+            val dateToAdd = dialogView.findViewById<Button>(R.id.todoDuedate_date)
+            val timeToAdd = dialogView.findViewById<Button>(R.id.todoDuedate_time)
+            val dateDisplay = dialogView.findViewById<TextView>(R.id.duedate_date)
+            val timeDisplay = dialogView.findViewById<TextView>(R.id.duedate_time)
+            dateDisplay.text = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy년 M월 d일"))
+            timeDisplay.text = LocalDateTime.now().format(DateTimeFormatter.ofPattern("H시 m분"))
+
+            val finishedchecker = dialogView.findViewById<CheckBox>(R.id.checkbox_isfinished)
+
+            dateToAdd.setOnClickListener {
+                var calendar = Calendar.getInstance()
+                var year = calendar.get(Calendar.YEAR)
+                var month = calendar.get(Calendar.MONTH)
+                var day = calendar.get(Calendar.DAY_OF_MONTH)
+
+                var listener = DatePickerDialog.OnDateSetListener { _, i, i2, i3 ->
+                    dateDisplay.text = "${i}년 ${i2}월 ${i3}일"
+                }
+
+                var dpicker = DatePickerDialog(this, listener, year, month, day)
+                dpicker.show()
+            }
+
+            timeToAdd.setOnClickListener {
+                var calendar = Calendar.getInstance()
+                var hour = calendar.get(Calendar.HOUR)
+                var minute = calendar.get(Calendar.MINUTE)
+
+                var listener = TimePickerDialog.OnTimeSetListener { _, i, i2 ->
+                    timeDisplay.text = "${i}시 ${i2}분"
+                }
+
+                // boolean is24HourView : true일 때 24시간으로 표기
+                var tpicker = TimePickerDialog(this, listener, hour, minute, false)
+
+                tpicker.show()
+            }
 
             // Add InputMethodManager for auto keyboard popup
             val ime = applicationContext.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -67,7 +109,6 @@ class MainActivity : AppCompatActivity() {
             // Show keyboard when AlertDialog is inflated
             ime.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
 
-
             // Add positive button and negative button for AlertDialog.
             // Pressing the positive button: Add data to the database and also add them in listview and update.
             // Pressing the negative button: Do nothing. Close the AlertDialog
@@ -75,10 +116,13 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton("추가") { _, _ ->
                     if (!TextUtils.isEmpty(titleToAdd.text.trim())) {
                         // Add item to the database
+                        var isfinished = finishedchecker.isChecked
                         val todo = Todo(
                             titleToAdd.text.toString(),
-                            desciptionToAdd.text.toString(),
-                            false
+                            descriptionToAdd.text.toString(),
+                            dateDisplay.text.toString(),
+                            timeDisplay.text.toString(),
+                            isfinished
                         )
                         dbHandler!!.addTodo(todo)
 
